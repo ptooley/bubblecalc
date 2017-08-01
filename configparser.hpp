@@ -122,7 +122,7 @@ public:
       this->radt_mode = false;
     }
     if(this->radt_mode){
-      std::cout << "Writing to " << filename 
+      std::cout << "Writing to " << this->outfile 
         << " using radt normalized units.";
     } else {
       std::cout << "Writing to " << filename

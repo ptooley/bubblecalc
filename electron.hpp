@@ -8,6 +8,10 @@
 
 #include "hdf5.h"
 
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_odeiv2.h>
+
 #include "utils.hpp"
 #include "consts.hpp"
 #include "typedefs.hpp"

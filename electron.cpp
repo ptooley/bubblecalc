@@ -1,8 +1,57 @@
 #include "electron.hpp"
 
+struct int_params{
+  num c_vphi;
+  num c_05momega2;
+  num c_05momega2vphi;
+  num c_025m2omega2vphi;
+  num c_05m2omega2vphi;
+};
+
+int integrator (double t, const double y[], double f[], void* params){
+  int_params *p = (int_params*) params;
+  double gamma = std::sqrt(1 + (std::pow(y[2],2) + std::pow(y[3],3))/k_me2c2);
+  f[0] = y[2] / (gamma * k_me);
+  f[1] = y[3] / (gamma * k_me);
+  f[2] = - (p->c_05momega2 * (y[0] - p->c_vphi*t))  - (p->c_025m2omega2vphi * y[3] * y[1] /gamma);
+  f[3] = - p->c_05momega2 * y[1] - p->c_05m2omega2vphi * y[2] * y[1] / gamma;
+  return(GSL_SUCCESS);
+}
+
+int jacobian(double t, const double y[], double *dfdy, double dfdt[], void *params){
+  int_params *p = (int_params*)params;
+  gsl_matrix_view dfdy_mat = gsl_matrix_view_array(dfdy, 4, 4);
+  gsl_matrix *m = &dfdy_mat.matrix;
+  double gamma = std::sqrt(1 + std::pow(y[2],2) + std::pow(y[3],3));
+
+  gsl_matrix_set (m, 0, 0, 0.0);
+  gsl_matrix_set (m, 0, 1, 0.0);
+  gsl_matrix_set (m, 0, 2, k_mec2/gamma);
+  gsl_matrix_set (m, 0, 3, 0.0);
+  gsl_matrix_set (m, 1, 0, 0.0);
+  gsl_matrix_set (m, 1, 1, 0.0);
+  gsl_matrix_set (m, 1, 2, 0.0);
+  gsl_matrix_set (m, 1, 3, k_mec2/gamma);
+  gsl_matrix_set (m, 2, 0, -p->c_05momega2);
+  gsl_matrix_set (m, 2, 1, -p->c_025m2omega2vphi * y[3]/gamma);
+  gsl_matrix_set (m, 2, 2, 0.0);
+  gsl_matrix_set (m, 2, 3, -p->c_025m2omega2vphi * y[1]/gamma);
+  gsl_matrix_set (m, 3, 0, 0.0);
+  gsl_matrix_set (m, 3, 1, -p->c_05momega2 - p->c_05m2omega2vphi * y[2]/gamma);
+  gsl_matrix_set (m, 3, 2, -p->c_05m2omega2vphi * y[1]/gamma);
+  gsl_matrix_set (m, 3, 3, 0.0);
+
+  dfdt[0] = 0.0;
+  dfdt[1] = 0.0;
+  dfdt[2] = p->c_05momega2vphi;
+  dfdt[3] = 0.0;
+
+  return(GSL_SUCCESS);
+}
+
+
 void Electron::initial_conditions(num t0, num x0, num y0, num z0, num px0, num py0, num pz0,
                                   num q0){
-
   num gamma0 = std::sqrt( 1 + (px0*px0 + py0*py0 + pz0*pz0)/k_me2c2);
   t[0] = t0;
   x[0] = x0 + k_c*bubble->beta*t0;
@@ -14,11 +63,13 @@ void Electron::initial_conditions(num t0, num x0, num y0, num z0, num px0, num p
   pz[0] = pz0;
   gamma[0] = gamma0;
   q = q0;
-
 }
 
 
 void Electron::calculate_track(size_t calc_steps){
+  const size_t ndims = 4;
+  const double relerr = 0.0;
+  const double abserr = 1e-6;
 	enlarge_as_needed(calc_steps);
 
   num omega_p2 = bubble->omega_p2;
@@ -28,19 +79,34 @@ void Electron::calculate_track(size_t calc_steps){
   num t_d = (-2.*std::pow(gamma_b,2.0) * xi[0])/k_c;
   num dt = t_d / calc_steps;
 
-	for (size_t s = 1; s < calc_steps; s++){
-			num dpxdt = -0.5*k_me*omega_p2*(xi[s-1] - (px[s-1]*py[s-1]*y[s-1] + pz[s-1]*pz[s-1]*z[s-1])/(gamma[s-1]*gamma[s-1]));
-      num dpydt = -0.25*k_me*omega_p2*y[s-1]*(1 + py[s-1]/gamma[s-1]);
-			num dpzdt = -0.25*k_me*omega_p2*z[s-1]*(1 + pz[s-1]/gamma[s-1]);
-      
-      t[s] = s*dt;
-			xi[s] = xi[s-1] + dt * (px[s-1] / (gamma[s-1] *k_me) - k_c*beta_b);
-			x[s] = x[s-1] + dt * (px[s-1] / (gamma[s-1] *k_me));
-			y[s] = y[s-1] + dt * (py[s-1] / (gamma[s-1] *k_me));
-			z[s] = z[s-1] + dt * (pz[s-1] / (gamma[s-1] *k_me));
-			px[s] = px[s-1] + dpxdt*dt;
-			py[s] = py[s-1] + dpydt*dt;
-			pz[s] = pz[s-1] + dpzdt*dt;
+  int_params params;
+  params.c_vphi = k_c * beta_b;
+  params.c_05momega2 = 0.5*k_me*omega_p2;
+  params.c_05momega2vphi = 0.5*k_me*omega_p2* params.c_vphi;
+  params.c_05m2omega2vphi = k_me*params.c_05momega2vphi;
+  params.c_025m2omega2vphi = 0.5*k_me*params.c_05momega2vphi; 
+
+  gsl_odeiv2_system sys = {integrator, jacobian, ndims, &params};
+  gsl_odeiv2_driver* driver = 
+    gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rkf45, dt, abserr, relerr);
+
+  double ti = t[0];
+  double t_int = ti;
+  double u[4] = {x[0], y[0], px[0], py[0]};
+	for (size_t s = 1; s <= calc_steps; s++){
+      double tt = ti + s * (t_d - ti) / calc_steps;
+      int status = gsl_odeiv2_driver_apply(driver, &t_int, tt, u);
+      if (status != GSL_SUCCESS){
+        std::cout << "Fell over! " << status <<std::endl;
+      }
+      t[s] = t_int;
+			xi[s] = u[0] - t_int*k_c*beta_b;
+			x[s] = u[0];
+			y[s] = u[1];
+			z[s] = 0;
+			px[s] = u[2];
+			py[s] = u[3];
+			pz[s] = 0;
       gamma[s] = std::sqrt(1.  + std::pow(px[s]/k_mec,2.) + std::pow(py[s]/k_mec,2.) 
                  + std::pow(pz[s]/k_mec,2.));
   }
@@ -74,6 +140,7 @@ herr_t Electron::save_track(hid_t file_handle, bool radt_format = false,
 
   return(status);
 }
+
 
 herr_t Electron::write_dset(hid_t group_h, const char* name, hsize_t* dsize, num* data,
                             herr_t dset_props){

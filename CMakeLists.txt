@@ -16,10 +16,14 @@ find_package(HDF5 REQUIRED COMPONENTS C HL)
 include_directories(${HDF5_INCLUDE_DIRS})  
 set(EXTRA_LIBS ${EXTRA_LIBS} ${HDF5_C_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
+find_package(GSL REQUIRED)
+include_directories(${GSL_INCLUDE_DIRS})
+set(EXTRA_LIBS ${EXTRA_LIBS} ${GSL_LIBRARIES})
+
+find_package(Boost REQUIRED COMPONENTS)
 set(Boost_USE_STATIC_LIBS OFF) 
 set(Boost_USE_MULTITHREADED ON)  
 set(Boost_USE_STATIC_RUNTIME OFF) 
-#find_package(Boost REQUIRED COMPONENTS)
 include_directories(${Boost_INCLUDE_DIRS})  
 set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
 
