@@ -49,7 +49,9 @@ int main(int argc, char* argv[]){
 
   Bubble bubble = Bubble(config->lambda0, config->eta2);
 
+  double xmin = std::numeric_limits<double>::max();
   for(const auto it : config->bunches){
+    xmin = std::min(xmin, it.x);
     dfn_uptr t_dist = dist_fn_helper(it.t, it.dt, it.tdist);
     dfn_uptr xi_dist = dist_fn_helper(it.x, it.dx, it.xdist);
     dfn_uptr y_dist = dist_fn_helper(it.y, it.dy, it.ydist);
@@ -63,7 +65,11 @@ int main(int argc, char* argv[]){
                                      py_dist, pz_dist, q_dist);
   }
 
-  bubble.calculate_tracks(config->nsteps);
+  num t_d = (-2.*std::pow(bubble.get_gamma(),2.0) * xmin)/k_c;
+  num t_end = t_d * config->int_time;
+  num dt = t_d / config->nsteps;
+
+  bubble.calculate_tracks(dt, t_end, 0.0);
   bubble.save_tracks(config->outfile, config->radt_mode);
 
   std::cout << "Calculation complete." << std::endl;

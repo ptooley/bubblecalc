@@ -22,6 +22,7 @@ public:
   std::vector<bunchdata> bunches;
   double eta2;
   double lambda0;
+  double int_time;
   std::string outfile;
   bool radt_mode;
   size_t nsteps;
@@ -121,6 +122,9 @@ public:
     } catch (const std::exception& e){
       this->radt_mode = false;
     }
+
+    this->int_time = block.get("int_time", 1.0);
+
     if(this->radt_mode){
       std::cout << "Writing to " << this->outfile 
         << " using radt normalized units.";

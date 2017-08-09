@@ -22,7 +22,7 @@ class Electron{
 		Electron(Bubble* _bubble, size_t _pid) : bubble(_bubble), pid(_pid){};
 
     void initial_conditions(num t0, num x0, num y0, num z0, num px0, num py0, num pz0, num q0);
-		void calculate_track(size_t calc_steps);
+		void calculate_track(double dt, double t_end, double t_start = 0.0);
     void radt_convert();
     void radt_revert();
     herr_t save_track(hid_t file_handle, bool radt_format, herr_t dset_props);

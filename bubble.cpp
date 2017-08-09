@@ -22,7 +22,7 @@ void Bubble::add_electron(num t0, num x0, num y0, num z0, num px0, num py0, num 
   electrons.back().initial_conditions(t0, x0, y0, z0, px0, py0, pz0, q0);
 }
 
-void Bubble::calculate_tracks(size_t calc_steps){
+void Bubble::calculate_tracks(double dt, double t_end, double t_start){
 
   size_t write_count = 0;
   size_t total_size = electrons.size();
@@ -31,11 +31,11 @@ void Bubble::calculate_tracks(size_t calc_steps){
   #ifdef _OPENMP
   #pragma omp parallel for
   #endif
-  for (auto it = electrons.begin(); it != electrons.end(); it++){
+  for (size_t i = 0; i < electrons.size(); i++){
     if(++write_count % update_freq == 0){
       std::cout << "Progress " << write_count << "/" << total_size << "\r" << std::flush;
     }
-    it->calculate_track(calc_steps);
+    electrons[i].calculate_track(dt, t_end, t_start);
   }
 }
 

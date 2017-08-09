@@ -10,7 +10,7 @@ struct int_params{
 
 int integrator (double t, const double y[], double f[], void* params){
   int_params *p = (int_params*) params;
-  double gamma = std::sqrt(1 + (std::pow(y[2],2) + std::pow(y[3],3))/k_me2c2);
+  double gamma = std::sqrt(1 + (std::pow(y[2],2) + std::pow(y[3],2))/k_me2c2);
   f[0] = y[2] / (gamma * k_me);
   f[1] = y[3] / (gamma * k_me);
   f[2] = - (p->c_05momega2 * (y[0] - p->c_vphi*t))  - (p->c_025m2omega2vphi * y[3] * y[1] /gamma);
@@ -55,7 +55,6 @@ void Electron::initial_conditions(num t0, num x0, num y0, num z0, num px0, num p
   num gamma0 = std::sqrt( 1 + (px0*px0 + py0*py0 + pz0*pz0)/k_me2c2);
   t[0] = t0;
   x[0] = x0 + k_c*bubble->beta*t0;
-  xi[0] = x0;
   y[0] = y0;
   z[0] = z0;
   px[0] = px0;
@@ -66,18 +65,13 @@ void Electron::initial_conditions(num t0, num x0, num y0, num z0, num px0, num p
 }
 
 
-void Electron::calculate_track(size_t calc_steps){
+void Electron::calculate_track(double dt, double t_end, double t_start){
   const size_t ndims = 4;
   const double relerr = 0.0;
   const double abserr = 1e-6;
-	enlarge_as_needed(calc_steps);
 
   num omega_p2 = bubble->omega_p2;
   num beta_b = bubble->beta;
-  num gamma_b = bubble->gamma;
-
-  num t_d = (-2.*std::pow(gamma_b,2.0) * xi[0])/k_c;
-  num dt = t_d / calc_steps;
 
   int_params params;
   params.c_vphi = k_c * beta_b;
@@ -88,19 +82,25 @@ void Electron::calculate_track(size_t calc_steps){
 
   gsl_odeiv2_system sys = {integrator, jacobian, ndims, &params};
   gsl_odeiv2_driver* driver = 
-    gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rkf45, dt, abserr, relerr);
+    gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rkf45, dt/10, abserr, relerr);
 
-  double ti = t[0];
+  
+  size_t end_step = std::llround(std::ceil((t_end / dt)));
+  double ti = std::max(t_start, t[0]);
+  size_t start_step = std::llround(std::ceil(ti / dt));
   double t_int = ti;
   double u[4] = {x[0], y[0], px[0], py[0]};
-	for (size_t s = 1; s <= calc_steps; s++){
-      double tt = ti + s * (t_d - ti) / calc_steps;
-      int status = gsl_odeiv2_driver_apply(driver, &t_int, tt, u);
+  size_t calc_steps = end_step - start_step;
+
+	enlarge_as_needed(calc_steps+1);
+	
+  for (size_t s = 1; s <= calc_steps; s++){
+      double t_step = ti + s * dt;
+      int status = gsl_odeiv2_driver_apply(driver, &t_int, t_step, u);
       if (status != GSL_SUCCESS){
         std::cout << "Fell over! " << status <<std::endl;
       }
-      t[s] = t_int;
-			xi[s] = u[0] - t_int*k_c*beta_b;
+      t[s] = t_step;
 			x[s] = u[0];
 			y[s] = u[1];
 			z[s] = 0;
