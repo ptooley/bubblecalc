@@ -8,44 +8,14 @@ struct int_params{
   num c_05m2omega2vphi;
 };
 
-int integrator (double t, const double y[], double f[], void* params){
+
+int Electron::integrator (double t, const double y[], double f[], void* params){
   int_params *p = (int_params*) params;
   double gamma = std::sqrt(1 + (std::pow(y[2],2) + std::pow(y[3],2))/k_me2c2);
   f[0] = y[2] / (gamma * k_me);
   f[1] = y[3] / (gamma * k_me);
   f[2] = - (p->c_05momega2 * (y[0] - p->c_vphi*t))  - (p->c_025m2omega2vphi * y[3] * y[1] /gamma);
   f[3] = - p->c_05momega2 * y[1] - p->c_05m2omega2vphi * y[2] * y[1] / gamma;
-  return(GSL_SUCCESS);
-}
-
-int jacobian(double t, const double y[], double *dfdy, double dfdt[], void *params){
-  int_params *p = (int_params*)params;
-  gsl_matrix_view dfdy_mat = gsl_matrix_view_array(dfdy, 4, 4);
-  gsl_matrix *m = &dfdy_mat.matrix;
-  double gamma = std::sqrt(1 + std::pow(y[2],2) + std::pow(y[3],3));
-
-  gsl_matrix_set (m, 0, 0, 0.0);
-  gsl_matrix_set (m, 0, 1, 0.0);
-  gsl_matrix_set (m, 0, 2, k_mec2/gamma);
-  gsl_matrix_set (m, 0, 3, 0.0);
-  gsl_matrix_set (m, 1, 0, 0.0);
-  gsl_matrix_set (m, 1, 1, 0.0);
-  gsl_matrix_set (m, 1, 2, 0.0);
-  gsl_matrix_set (m, 1, 3, k_mec2/gamma);
-  gsl_matrix_set (m, 2, 0, -p->c_05momega2);
-  gsl_matrix_set (m, 2, 1, -p->c_025m2omega2vphi * y[3]/gamma);
-  gsl_matrix_set (m, 2, 2, 0.0);
-  gsl_matrix_set (m, 2, 3, -p->c_025m2omega2vphi * y[1]/gamma);
-  gsl_matrix_set (m, 3, 0, 0.0);
-  gsl_matrix_set (m, 3, 1, -p->c_05momega2 - p->c_05m2omega2vphi * y[2]/gamma);
-  gsl_matrix_set (m, 3, 2, -p->c_05m2omega2vphi * y[1]/gamma);
-  gsl_matrix_set (m, 3, 3, 0.0);
-
-  dfdt[0] = 0.0;
-  dfdt[1] = 0.0;
-  dfdt[2] = p->c_05momega2vphi;
-  dfdt[3] = 0.0;
-
   return(GSL_SUCCESS);
 }
 
@@ -78,24 +48,24 @@ void Electron::calculate_track(double dt, double t_end, double t_start){
   params.c_05momega2 = 0.5*k_me*omega_p2;
   params.c_05momega2vphi = 0.5*k_me*omega_p2* params.c_vphi;
   params.c_05m2omega2vphi = k_me*params.c_05momega2vphi;
-  params.c_025m2omega2vphi = 0.5*k_me*params.c_05momega2vphi; 
+  params.c_025m2omega2vphi = 0.5*k_me*params.c_05momega2vphi;
 
-  gsl_odeiv2_system sys = {integrator, jacobian, ndims, &params};
-  gsl_odeiv2_driver* driver = 
+  gsl_odeiv2_system sys = {Electron::integrator, NULL, ndims, &params};
+  gsl_odeiv2_driver* driver =
     gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rkf45, dt/10, abserr, relerr);
 
-  
+
   size_t end_step = std::llround(std::ceil((t_end / dt)));
   double ti = std::max(t_start, t[0]);
   size_t start_step = std::llround(std::ceil(ti / dt));
-  double t_int = ti;
+  double t_int = t[0];
   double u[4] = {x[0], y[0], px[0], py[0]};
   size_t calc_steps = end_step - start_step;
 
 	enlarge_as_needed(calc_steps+1);
-	
-  for (size_t s = 1; s <= calc_steps; s++){
-      double t_step = ti + s * dt;
+
+  for (size_t s = start_step; s <= end_step; s++){
+      double t_step = s * dt;
       int status = gsl_odeiv2_driver_apply(driver, &t_int, t_step, u);
       if (status != GSL_SUCCESS){
         std::cout << "Fell over! " << status <<std::endl;
@@ -107,7 +77,7 @@ void Electron::calculate_track(double dt, double t_end, double t_start){
 			px[s] = u[2];
 			py[s] = u[3];
 			pz[s] = 0;
-      gamma[s] = std::sqrt(1.  + std::pow(px[s]/k_mec,2.) + std::pow(py[s]/k_mec,2.) 
+      gamma[s] = std::sqrt(1.  + std::pow(px[s]/k_mec,2.) + std::pow(py[s]/k_mec,2.)
                  + std::pow(pz[s]/k_mec,2.));
   }
 }
@@ -148,13 +118,14 @@ herr_t Electron::write_dset(hid_t group_h, const char* name, hsize_t* dsize, num
     hid_t dspace_h, dset_h;
 
     dspace_h = H5Screate_simple(1,dsize, NULL);
-    dset_h = H5Dcreate(group_h, name, H5T_NATIVE_DOUBLE, dspace_h, H5P_DEFAULT, dset_props, H5P_DEFAULT); 
+    dset_h = H5Dcreate(group_h, name, H5T_NATIVE_DOUBLE, dspace_h, H5P_DEFAULT, dset_props, H5P_DEFAULT);
     status = H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
     status = H5Dclose(dset_h);
     status = H5Sclose(dspace_h);
-    
+
     return(status);
 }
+
 
 herr_t Electron::fill_dset(hid_t group_h, const char* name, hsize_t* dsize, num* data,
                             herr_t dset_props){
@@ -164,12 +135,13 @@ herr_t Electron::fill_dset(hid_t group_h, const char* name, hsize_t* dsize, num*
     dbuf.resize(*dsize);
     std::fill(dbuf.begin(), dbuf.end(), *data);
     dspace_h = H5Screate_simple(1,dsize, NULL);
-    dset_h = H5Dcreate(group_h, name, H5T_NATIVE_DOUBLE, dspace_h, H5P_DEFAULT, dset_props, H5P_DEFAULT); 
+    dset_h = H5Dcreate(group_h, name, H5T_NATIVE_DOUBLE, dspace_h, H5P_DEFAULT, dset_props, H5P_DEFAULT);
     status = H5Dwrite(dset_h, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, dbuf.data());
     status = H5Dclose(dset_h);
     status = H5Sclose(dspace_h);
     return(status);
 }
+
 
 void Electron::radt_convert(){
   if (!radt_format){
@@ -186,6 +158,7 @@ void Electron::radt_convert(){
   }
 }
 
+
 void Electron::radt_revert(){
   if (radt_format){
     radt_format = false;
@@ -200,6 +173,7 @@ void Electron::radt_revert(){
     iterable_add(&gamma, 1.);
   }
 }
+
 
 void Electron::enlarge_as_needed(size_t new_steps){
 	if (new_steps < t.size()) return;

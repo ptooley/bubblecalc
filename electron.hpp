@@ -27,6 +27,8 @@ class Electron{
     void radt_revert();
     herr_t save_track(hid_t file_handle, bool radt_format, herr_t dset_props);
 
+    static int integrator(double t, const double y[], double f[], void* params);
+
   private:
     Bubble* bubble;
     size_t pid;

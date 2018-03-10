@@ -37,7 +37,7 @@ public:
     }
     catch (const std::exception& e){
       std::ostringstream err;
-      err << "Failed to parse " << filename << "check your syntax!\n";
+      err << "Failed to parse " << filename << " check your syntax!\n";
       throw std::runtime_error(err.str());
     }
 

@@ -45,7 +45,7 @@ herr_t Bubble::save_tracks(std::string filename, bool radt_format){
   dset_props = H5P_DEFAULT;
 
   fapl = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_libver_bounds(fapl, H5F_LIBVER_18, H5F_LIBVER_LATEST);
+  status = H5Pset_libver_bounds(fapl, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
   file_h = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
 
   std::cout << "Writing \"" << filename << "\":" << std::endl;
