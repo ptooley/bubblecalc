@@ -6,6 +6,8 @@ dfn_uptr dist_fn_helper(double x, double dx, std::string dist){
     dfn = std::make_unique<uniform_dist>(x, dx);
   } else if(dist == "normal"){
     dfn = std::make_unique<norm_dist>(x, dx);
+  } else if(dist == "sin2"){
+    dfn = std::make_unique<sin2_dist>(x, dx);
   } else if(dist == "constant"){
     dfn = std::make_unique<const_dist>(x);
   } else if(dist == ""){

@@ -39,7 +39,7 @@ void Bubble::calculate_tracks(double dt, double t_end, double t_start){
   }
 }
 
-herr_t Bubble::save_tracks(std::string filename, bool radt_format){
+herr_t Bubble::save_tracks(const std::string &filename, bool radt_format){
   hid_t file_h, fapl;
   herr_t status, dset_props;
   dset_props = H5P_DEFAULT;

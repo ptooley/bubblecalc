@@ -19,7 +19,7 @@ class Bubble{
     void preallocate_hint(size_t n_electron);
     void add_electron(num t0, num x0, num y0, num z0, num px0, num py0, num pz0, num q0);
     void calculate_tracks(double dt, double t_end, double t_start);
-    herr_t save_tracks(std::string filename, bool radt_format);
+    herr_t save_tracks(const std::string &filename, bool radt_format);
     const void add_electron_distribution(size_t n_electron, dfn_uptr& t_fn,
                                          dfn_uptr& xi_fn, 
                                          dfn_uptr& y_fn, 

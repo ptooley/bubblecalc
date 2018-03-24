@@ -35,6 +35,7 @@ class Electron{
     bool radt_format = false;
 
     num q = 0;
+    num t_ofs = 0;
     std::vector<num> t = {0.0};
     std::vector<num> xi = {0.0};
     std::vector<num> x = {0.0};

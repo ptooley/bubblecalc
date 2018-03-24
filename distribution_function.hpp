@@ -84,4 +84,35 @@ class UniformDistribution: public DistributionFunction<T>{
   T c, w, a, b;
   std::uniform_real_distribution<T> rng;
 };
+
+template <class T>
+class Sin2Distribution: public DistributionFunction<T>{
+  public:
+  Sin2Distribution(T center, T width): c(center), w(width){
+    a = c - w/2.;
+    b = c + w/2.;
+    rng_x = std::uniform_real_distribution<T>(a,b);
+    rng_y = std::uniform_real_distribution<T>(0.0,1.0);
+  }
+
+  std::vector<T> operator()(size_t n_values){
+    std::vector<T> dist_data;
+    dist_data.resize(n_values);
+    T xpoint, ypoint, ythres;
+    for (size_t i = 0; i < n_values; i++){
+      do{
+        xpoint = rng_x(this->gen);
+        ypoint = rng_y(this->gen);
+        ythres = 0.5 + 0.5*cos(2*M_PI*(xpoint - this->c)/this->w);
+      }while(ypoint > ythres);
+      dist_data[i] = xpoint;
+    }
+    return(dist_data);
+  }
+   
+  private:
+  T c, w, a, b;
+  std::uniform_real_distribution<T> rng_x;
+  std::uniform_real_distribution<T> rng_y;
+};
 #endif

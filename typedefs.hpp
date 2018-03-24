@@ -20,6 +20,7 @@ typedef std::unique_ptr<dist_fn> dfn_uptr;
 typedef NormalDistribution<num> norm_dist;
 typedef ConstantDistribution<num> const_dist;
 typedef UniformDistribution<num> uniform_dist;
+typedef Sin2Distribution<num> sin2_dist;
 
 #endif
 

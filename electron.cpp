@@ -23,8 +23,9 @@ int Electron::integrator (double t, const double y[], double f[], void* params){
 void Electron::initial_conditions(num t0, num x0, num y0, num z0, num px0, num py0, num pz0,
                                   num q0){
   num gamma0 = std::sqrt( 1 + (px0*px0 + py0*py0 + pz0*pz0)/k_me2c2);
-  t[0] = t0;
-  x[0] = x0 + k_c*bubble->beta*t0;
+  t_ofs = t0;
+  t[0] = 0.0;
+  x[0] = x0; // + k_c*bubble->beta*t0;
   y[0] = y0;
   z[0] = z0;
   px[0] = px0;
@@ -80,6 +81,9 @@ void Electron::calculate_track(double dt, double t_end, double t_start){
       gamma[s] = std::sqrt(1.  + std::pow(px[s]/k_mec,2.) + std::pow(py[s]/k_mec,2.)
                  + std::pow(pz[s]/k_mec,2.));
   }
+
+  std::transform(this->t.begin(), this->t.end(), this->t.begin(),
+                 std::bind1st(std::plus<num>(), this->t_ofs));
 }
 
 
