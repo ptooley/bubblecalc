@@ -1,5 +1,6 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <string>
 #include <iostream>
@@ -9,6 +10,7 @@
 #include "consts.hpp"
 
 namespace pt = boost::property_tree;
+namespace ba = boost::algorithm;
 
 struct bunchdata{
   double x, y, z, px, py, pz, t, q;
@@ -42,7 +44,7 @@ public:
     }
 
     for(const auto &it : config){
-      if( it.first == "Bunch"){ handle_bunch_block(it.first, it.second);}
+      if(ba::starts_with(it.first, "Bunch")){ handle_bunch_block(it.first, it.second);}
       else if( it.first == "Output"){ handle_output_block(it.first, it.second);}
       else if( it.first == "Bubble"){ handle_bubble_block(it.first, it.second);}
       else { handle_unknown_block(it.first, it.second);}

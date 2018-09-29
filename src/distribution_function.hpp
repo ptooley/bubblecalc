@@ -39,7 +39,7 @@ class NormalDistribution : public DistributionFunction<T>{
     }
     return(dist_data);
   }
-   
+
   private:
   T c, w, denom;
   std::normal_distribution<T> rng;
@@ -57,7 +57,7 @@ class ConstantDistribution : public DistributionFunction<T>{
     std::fill(dist_data.begin(), dist_data.end(), c);
     return(dist_data);
   }
-   
+
   private:
   T c;
 };
@@ -79,10 +79,32 @@ class UniformDistribution: public DistributionFunction<T>{
     }
     return(dist_data);
   }
-   
+
   private:
   T c, w, a, b;
   std::uniform_real_distribution<T> rng;
+};
+
+template <class T>
+class LinearSpacedDistribution: public DistributionFunction<T>{
+  public:
+  LinearSpacedDistribution(T center, T width): c(center), w(width){
+    a = c - w/2.;
+    b = c + w/2.;
+  }
+
+  std::vector<T> operator()(size_t n_values){
+    std::vector<T> dist_data;
+    T spacing = w / (n_values-1);
+    dist_data.resize(n_values);
+    for (size_t i = 0; i < n_values; i++){
+      dist_data[i] = a + i*spacing;
+    }
+    return(dist_data);
+  }
+
+  private:
+  T c, w, a, b;
 };
 
 template <class T>
@@ -109,7 +131,7 @@ class Sin2Distribution: public DistributionFunction<T>{
     }
     return(dist_data);
   }
-   
+
   private:
   T c, w, a, b;
   std::uniform_real_distribution<T> rng_x;

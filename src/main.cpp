@@ -10,6 +10,8 @@ dfn_uptr dist_fn_helper(double x, double dx, std::string dist){
     dfn = std::make_unique<sin2_dist>(x, dx);
   } else if(dist == "constant"){
     dfn = std::make_unique<const_dist>(x);
+  } else if(dist == "linspace"){
+    dfn = std::make_unique<linspace_dist>(x, dx);
   } else if(dist == ""){
     std::cout << "WARNING: No distribution specified, falling back to ";
     if(dx <= 0){

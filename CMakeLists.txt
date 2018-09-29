@@ -12,6 +12,8 @@ endif()
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -O0 -ggdb -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O2 -march=native")
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 option(ENABLE_OPENMP "Enable openmp" ON)
 if (ENABLE_OPENMP)
 find_package(OpenMP)
@@ -35,12 +37,4 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 include_directories(${Boost_INCLUDE_DIRS})  
 set(EXTRA_LIBS ${EXTRA_LIBS} ${Boost_LIBRARIES})
 
-set (BUBBLECALCSOURCES
-  main
-  electron
-  bubble
-)
-
-add_executable(bubblecalc ${BUBBLECALCSOURCES})
-set_target_properties(bubblecalc PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(bubblecalc ${EXTRA_LIBS})
+add_subdirectory("src")
