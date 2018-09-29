@@ -1,7 +1,11 @@
+#ifndef CONFIGPARSER_HPP
+#define CONFIGPARSER_HPP
+
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <vector>
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -35,7 +39,7 @@ public:
     
   void parse_config(){
     try{
-      pt::read_json(filename, config);
+      pt::read_ini(filename, config);
     }
     catch (const std::exception& e){
       std::ostringstream err;
@@ -166,3 +170,4 @@ protected:
 
 };
 
+#endif
