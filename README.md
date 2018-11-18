@@ -1,7 +1,22 @@
 # Bubblecalc
+BubbleCalc is used to calculate the motion of electrons in an idealised wakefield
+bubble. Electron bunch and bubble parameters are specified via a configuration
+file. Output is in hdf5 format with SI units of Orisis units.
 
+# Usage
+BubbleCalc has no real command line interface, but accepts a
+single .ini formatted input file which contains all options. This is a deliberate
+design decision to encourage documentation and reproducibility of research.
+```
+user@machine $ bubblecalc −h
+Usage: bubblecalc [−h] <configfile>
+Allowed Options:
+−h [−−help]  Print this help message
+<configfile> Configuration .ini file
+```
 
 # Configuration File
+The configuration file format is .ini, with key = value pairs. The full set of available options are shown below, note that not all fields are required for a valid config, default options are shown where applicable:
 
 ```ini
 ; Not all fields are required for a valid config, default options are shown where applicable
@@ -80,3 +95,27 @@ q = [no default, integer]
 ;t = 0.0
 ;dt = 0.0
 ```
+# Output File Structure
+
+The output HDF5 file will contain one group per electron specified in the input
+file. Each electron group contains time series datasets for the electron motion in
+either SI units or Osiris units as requested by the user.
+
+#Installation
+Source code is available from the github repository: https://github.com/ptooley/bubblecalc.git
+
+Prerequisites for installation are:
+• A C++11 capable compiler (e.g gcc 6 or greater)
+• Cmake version 3.6 or later
+• Boost version 1.58 or later
+• HDF5 (version 1.10 or later recommended)
+Installation is then performed by checking out the code, running cmake and
+then make:
+
+```
+user@machine $ git clone https://github.com/ptooley/bubblecalc.git
+user@machine $ cd bubblecalc
+user@machine $ cmake .
+user@machine $ make
+```
+BubbleCalc can then be found in the ./bin/ directory.
